@@ -1,0 +1,1497 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수면제 조합 시뮬레이터</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: rgba(255, 255, 255, 0.97);
+      --line: rgba(39, 60, 89, 0.08);
+      --ink: #1a2430;
+      --muted: #667688;
+      --accent: #b54e39;
+      --accent-2: #315f90;
+      --good: #2f7a58;
+      --warn: #c28822;
+      --bad: #af3d31;
+      --shadow: 0 14px 34px rgba(29, 44, 69, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(49, 95, 144, 0.05), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(181, 78, 57, 0.04), transparent 26%),
+        linear-gradient(180deg, #ffffff 0%, #f5f8fb 100%);
+    }
+
+    .page {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    .hero,
+    .section,
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      padding: 28px;
+      margin-bottom: 24px;
+      align-items: start;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2.2rem, 5vw, 4.4rem);
+      line-height: 0.93;
+      letter-spacing: -0.05em;
+    }
+
+    .lead,
+    .copy,
+    .help,
+    .footnote,
+    .metric-copy,
+    .pill-copy,
+    .scale li {
+      color: var(--muted);
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 58ch;
+      line-height: 1.7;
+      font-size: 1.03rem;
+    }
+
+    .formula-box {
+      padding: 18px;
+      border-radius: 16px;
+      background: #f9fbfd;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+      font-family: "Cambria Math", "Times New Roman", serif;
+      line-height: 1.75;
+      font-size: 1.04rem;
+    }
+
+    .formula-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      appearance: none;
+      border: 1px solid rgba(49, 95, 144, 0.12);
+      background: #ffffff;
+      color: var(--ink);
+      padding: 11px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      font: inherit;
+      transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(29, 44, 69, 0.08);
+      border-color: rgba(181, 78, 57, 0.22);
+    }
+
+    .hero-side h2,
+    .section h2,
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 0.96rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .copy {
+      margin: 10px 0 0;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .section {
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 1.55rem;
+      letter-spacing: -0.03em;
+    }
+
+    .grid-top {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .composer,
+    .preset-side {
+      display: grid;
+      gap: 16px;
+    }
+
+    .subcard {
+      padding: 16px;
+      border-radius: 16px;
+      background: #fafcff;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+    }
+
+    .mechanism-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mechanism {
+      padding: 14px;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+    }
+
+    .mechanism strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 1rem;
+    }
+
+    .mechanism small {
+      display: block;
+      min-height: 40px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .slider-row {
+      margin-top: 12px;
+    }
+
+    .slider-row label,
+    .dose-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      color: var(--accent-2);
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .help {
+      margin: 8px 0 0;
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    .preset-buttons {
+      display: grid;
+      gap: 10px;
+    }
+
+    .preset-button {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(49, 95, 144, 0.1);
+      background: #ffffff;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .preset-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(181, 78, 57, 0.2);
+      box-shadow: 0 10px 24px rgba(29, 44, 69, 0.08);
+    }
+
+    .preset-button.active {
+      border-color: rgba(181, 78, 57, 0.22);
+      background: rgba(181, 78, 57, 0.05);
+    }
+
+    .preset-button strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .preset-button span {
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .pillbox {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .pill {
+      padding: 14px;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+    }
+
+    .pill h3,
+    .metric h3 {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+    }
+
+    .pill strong {
+      display: block;
+      font-size: 1.45rem;
+      letter-spacing: -0.04em;
+    }
+
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .dose-panel,
+    .visual-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .support-stack {
+      display: grid;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .card {
+      padding: 18px;
+    }
+
+    .toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #f6f9fc;
+    }
+
+    .toggle input {
+      width: 22px;
+      height: 22px;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .scorebox {
+      position: relative;
+      overflow: hidden;
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff, #f7f9fc);
+      border: 1px solid rgba(49, 95, 144, 0.08);
+    }
+
+    .scorebox::after {
+      content: "";
+      position: absolute;
+      inset: auto -20% -40% -20%;
+      height: 100px;
+      background: radial-gradient(circle, rgba(49, 95, 144, 0.1), transparent 60%);
+      pointer-events: none;
+    }
+
+    .score-tag {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .score-value {
+      margin: 10px 0 8px;
+      font-size: clamp(2.8rem, 7vw, 4.8rem);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.07em;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .bars {
+      display: grid;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 124px 1fr 62px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .track {
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(33, 29, 24, 0.08);
+    }
+
+    .fill {
+      height: 100%;
+      border-radius: inherit;
+      transition: width 220ms ease;
+    }
+
+    canvas {
+      width: 100%;
+      height: 230px;
+      display: block;
+    }
+
+    .curve-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .legend-line {
+      width: 28px;
+      height: 0;
+      border-top: 3px solid currentColor;
+      border-radius: 999px;
+    }
+
+    .legend-line.dashed {
+      border-top-style: dashed;
+    }
+
+    .curve-tools {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .explain {
+      padding: 16px;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+    }
+
+    .explain h3 {
+      margin: 0 0 6px;
+      font-size: 0.92rem;
+    }
+
+    .explain strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1.42rem;
+      letter-spacing: -0.04em;
+    }
+
+    .explain p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    .metric {
+      padding: 16px;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.5rem;
+      letter-spacing: -0.04em;
+      margin-bottom: 6px;
+    }
+
+    .metric-copy {
+      margin: 0;
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    .reading-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .scale {
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }
+
+    .footnote {
+      margin-top: 20px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      background: #ffffff;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+      line-height: 1.6;
+      font-size: 0.94rem;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 32, 48, 0.34);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      z-index: 30;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(920px, 100%);
+      max-height: min(84vh, 920px);
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.99);
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 50px rgba(20, 32, 48, 0.18);
+      padding: 22px 22px 18px;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    .modal-head h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    .close {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(49, 95, 144, 0.12);
+      background: #ffffff;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .equation-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .equation {
+      padding: 16px;
+      border-radius: 16px;
+      background: #fafcff;
+      border: 1px solid rgba(49, 95, 144, 0.08);
+    }
+
+    .equation strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .equation code {
+      display: block;
+      white-space: pre-wrap;
+      font-family: "Cambria Math", "Times New Roman", serif;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--ink);
+    }
+
+    .equation p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.94rem;
+    }
+
+    .equation a {
+      color: var(--accent-2);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .equation a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 1024px) {
+      .hero,
+      .grid-top,
+      .sim-grid,
+      .score-grid,
+      .reading-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mechanism-grid,
+      .metric-grid,
+      .pillbox,
+      .explain-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <article>
+        <h1>수면제 조합과<br>복용 반응 시뮬레이터</h1>
+        <p class="lead">
+          위에서는 작용기전 비중을 조절해 하나의 가상 수면제를 구성하고, 아래에서는 그 조합이 상대 복용량에 따라
+          얼마나 안정적으로 보이는지 시각화합니다. 실제 제조법이나 실제 용량이 아니라 교육용 상대 모델입니다.
+        </p>
+      </article>
+      <aside class="hero-side">
+        <h2>모델 개요</h2>
+        <div class="formula-box">
+          E(x) = E<sub>max</sub> x<sup>&gamma;</sup> / (EC<sub>50</sub><sup>&gamma;</sup> + x<sup>&gamma;</sup>)<br>
+          E<sub>Bliss</sub> = 1 - &Pi;(1 - E<sub>pathway</sub>)<br>
+          P<sub>tox</sub> = 1 / (1 + e<sup>-(a + bB)</sup>)<br>
+          Stability = 100 &times; (1 - P<sub>tox</sub>)
+        </div>
+        <p class="copy">
+          상단 슬라이더는 조합 비중이며, 하단 슬라이더는 그 조합의 정규화 노출량입니다. `RU`는 relative unit, `AU`는 alcohol unit이며, 보고서에서는 `C/EC50`에 대응하는 무차원 노출지표로 해석할 수 있습니다.
+        </p>
+        <div class="formula-actions">
+          <button id="openModelModal" class="button" type="button">수학적 모델과 논문 근거 보기</button>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Recipe Composer</h2>
+          <h3 class="section-title">1. 약 조합 설계</h3>
+        </div>
+      </div>
+
+      <div class="grid-top">
+        <div class="composer">
+          <div class="subcard">
+            <div class="mechanism-grid">
+              <article class="mechanism">
+                <strong>GABA 강화</strong>
+                <small>바르비투르산계, 벤조디아제핀계, Z-drug 비중을 합산합니다.</small>
+                <div class="slider-row">
+                  <label for="gabaLegacyMix"><span>바르비투르산계</span><span id="gabaLegacyMixValue" class="value">0%</span></label>
+                  <input id="gabaLegacyMix" type="range" min="0" max="100" value="0">
+                </div>
+                <div class="slider-row">
+                  <label for="gabaBenzoMix"><span>벤조디아제핀계</span><span id="gabaBenzoMixValue" class="value">38%</span></label>
+                  <input id="gabaBenzoMix" type="range" min="0" max="100" value="38">
+                </div>
+                <div class="slider-row">
+                  <label for="gabaZMix"><span>Z-drug</span><span id="gabaZMixValue" class="value">24%</span></label>
+                  <input id="gabaZMix" type="range" min="0" max="100" value="24">
+                </div>
+              </article>
+
+              <article class="mechanism">
+                <strong>멜라토닌 조절</strong>
+                <small>라멜테온과 멜라토닌은 직접 억제보다는 리듬 조절 중심으로 가정합니다.</small>
+                <div class="slider-row">
+                  <label for="melatoninRamelteonMix"><span>라멜테온</span><span id="melatoninRamelteonMixValue" class="value">8%</span></label>
+                  <input id="melatoninRamelteonMix" type="range" min="0" max="100" value="8">
+                </div>
+                <div class="slider-row">
+                  <label for="melatoninMix"><span>멜라토닌</span><span id="melatoninMixValue" class="value">6%</span></label>
+                  <input id="melatoninMix" type="range" min="0" max="100" value="6">
+                </div>
+              </article>
+
+              <article class="mechanism">
+                <strong>오렉신 차단</strong>
+                <small>수보렉산트 등 오렉신 길항제 계열을 하나의 축으로 모델링합니다.</small>
+                <div class="slider-row">
+                  <label for="orexinMix"><span>오렉신 길항제</span><span id="orexinMixValue" class="value">10%</span></label>
+                  <input id="orexinMix" type="range" min="0" max="100" value="10">
+                </div>
+              </article>
+
+              <article class="mechanism">
+                <strong>히스타민 차단</strong>
+                <small>독세핀 저용량과 진정성 항히스타민제를 분리해서 넣습니다.</small>
+                <div class="slider-row">
+                  <label for="histamineDoxepinMix"><span>독세핀 저용량</span><span id="histamineDoxepinMixValue" class="value">8%</span></label>
+                  <input id="histamineDoxepinMix" type="range" min="0" max="100" value="8">
+                </div>
+                <div class="slider-row">
+                  <label for="histamineAntihistamineMix"><span>항히스타민제</span><span id="histamineAntihistamineMixValue" class="value">6%</span></label>
+                  <input id="histamineAntihistamineMix" type="range" min="0" max="100" value="6">
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <aside class="preset-side">
+          <div class="subcard">
+            <h2>Presets</h2>
+            <div class="preset-buttons">
+              <button class="preset-button" data-preset="legacy">
+                <strong>과거의 수면제 프리셋</strong>
+                <span>바르비투르산계 비중이 높은 조합으로, 억제 위험이 빠르게 증가하는 형태입니다.</span>
+              </button>
+              <button class="preset-button active" data-preset="modern">
+                <strong>현대의 수면제 프리셋</strong>
+                <span>벤조/Z-drug와 오렉신, 멜라토닌 계열이 섞인 상대적으로 포화형 조합입니다.</span>
+              </button>
+              <button class="preset-button" data-preset="custom">
+                <strong>사용자 조합</strong>
+                <span>현재 슬라이더 상태를 그대로 사용합니다. 위쪽에서 비중을 직접 설계할 때 선택됩니다.</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="subcard">
+            <h2>현재 조합 요약</h2>
+            <div class="pillbox">
+              <div class="pill">
+                <h3>지배 기전</h3>
+                <strong id="dominantMechanism">GABA 강화</strong>
+                <div id="dominantCopy" class="pill-copy">현대형 GABA 성분이 중심입니다.</div>
+              </div>
+              <div class="pill">
+                <h3>조합 성향</h3>
+                <strong id="recipeStyle">현대형 혼합</strong>
+                <div id="recipeStyleCopy" class="pill-copy">포화형 효과가 섞인 중간형 프로파일입니다.</div>
+              </div>
+              <div class="pill">
+                <h3>구성 합계</h3>
+                <strong id="recipeTotal">100%</strong>
+                <div class="pill-copy">실제 제조비가 아니라 상대 기전 비중의 합계입니다.</div>
+              </div>
+              <div class="pill">
+                <h3>이론 억제계수</h3>
+                <strong id="recipePotency">0.00</strong>
+                <div class="pill-copy">아래 복용량 반응 계산에 쓰이는 상대 위험 계수입니다.</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Dose Response</h2>
+          <h3 class="section-title">2. 해당 조합의 복용량 반응</h3>
+        </div>
+      </div>
+
+      <div class="sim-grid">
+        <div class="dose-panel">
+          <div class="card">
+            <div class="dose-label">
+              <span>정규화 수면제 노출량</span>
+              <span id="doseValue" class="value">3.6 RU</span>
+            </div>
+            <input id="dose" type="range" min="0" max="100" value="36">
+            <p class="help">조합된 약 전체의 정규화 노출량입니다. 실제 mg가 아니라 `C/EC50`에 대응하는 무차원 상대 단위입니다.</p>
+          </div>
+
+          <div class="card">
+            <div class="toggle">
+              <label for="alcoholEnabled">알코올 병용 활성화</label>
+              <input id="alcoholEnabled" type="checkbox">
+            </div>
+          </div>
+
+          <div class="card" id="alcoholCard" style="opacity:0.45;">
+            <div class="dose-label">
+              <span>정규화 알코올 노출량</span>
+              <span id="alcoholValue" class="value">0.0 AU</span>
+            </div>
+            <input id="alcohol" type="range" min="0" max="100" value="0" disabled>
+            <p class="help">알코올도 실제 음주량이 아니라 정규화 노출지표입니다. 독립 부담과 함께 GABA/히스타민 계열과 상호작용 항을 형성합니다.</p>
+          </div>
+
+          <div class="card">
+            <div class="dose-label">
+              <span>개인 취약성</span>
+              <span id="vulnerabilityValue" class="value">25</span>
+            </div>
+            <input id="vulnerability" type="range" min="0" max="100" value="25">
+            <p class="help">고령, 수면무호흡 경향, 간 기능 저하, 다른 중추신경억제제 존재 등을 추상화한 값입니다.</p>
+          </div>
+
+          <div class="card">
+            <div class="dose-label">
+              <span>상호작용 민감도</span>
+              <span id="interactionValue" class="value">40</span>
+            </div>
+            <input id="interaction" type="range" min="0" max="100" value="40">
+            <p class="help">병용이 있을 때 위험 증가가 얼마나 가파른지 조절합니다.</p>
+          </div>
+
+          <div class="card">
+            <h2>단위 안내</h2>
+            <p class="copy">
+              `RU`와 `AU`는 실제 `mg`, `mL`, `잔 수`가 아니라 문헌형 PK/PD 수식을 시각화하기 위한 정규화 노출 단위입니다.
+              과제물에서는 `무차원 노출지표`, `C/EC50-유사 축척`, `상대 노출 정규화 값`으로 설명하는 편이 적절합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="visual-panel">
+          <div class="card score-grid">
+            <div class="scorebox">
+              <div class="score-tag">Stability Index</div>
+              <div id="stabilityScore" class="score-value">0</div>
+              <div id="status" class="status">분석 중</div>
+            </div>
+            <div>
+              <div class="score-tag">위험 구성</div>
+              <div class="bars">
+                <div class="bar-row">
+                  <span>GABA</span>
+                  <div class="track"><div id="gabaBar" class="fill"></div></div>
+                  <strong id="gabaBarValue">0%</strong>
+                </div>
+                <div class="bar-row">
+                  <span>멜라토닌</span>
+                  <div class="track"><div id="melatoninBar" class="fill"></div></div>
+                  <strong id="melatoninBarValue">0%</strong>
+                </div>
+                <div class="bar-row">
+                  <span>오렉신</span>
+                  <div class="track"><div id="orexinBar" class="fill"></div></div>
+                  <strong id="orexinBarValue">0%</strong>
+                </div>
+                <div class="bar-row">
+                  <span>히스타민</span>
+                  <div class="track"><div id="histamineBar" class="fill"></div></div>
+                  <strong id="histamineBarValue">0%</strong>
+                </div>
+                <div class="bar-row">
+                  <span>알코올</span>
+                  <div class="track"><div id="alcoholBar" class="fill"></div></div>
+                  <strong id="alcoholBarValue">0%</strong>
+                </div>
+                <div class="bar-row">
+                  <span>상호작용</span>
+                  <div class="track"><div id="interactionBar" class="fill"></div></div>
+                  <strong id="interactionBarValue">0%</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="curve-head">
+              <h2>Curve</h2>
+              <div class="curve-tools">
+                <div class="legend">
+                  <span class="legend-item" style="color:#a94931;"><span class="legend-line"></span>과거의약 프리셋</span>
+                  <span class="legend-item" style="color:#385d7d;"><span class="legend-line"></span>현대의약 프리셋</span>
+                  <span class="legend-item" style="color:#7b6a52;"><span class="legend-line dashed"></span>현재 조합</span>
+                </div>
+              </div>
+            </div>
+            <canvas id="curve" width="800" height="230"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="support-stack">
+        <div class="metric-grid">
+          <div class="metric">
+            <h3>현재 복용 조건</h3>
+            <strong id="currentDoseLabel">3.6 RU</strong>
+            <p class="metric-copy">상단에서 만든 조합에 현재 정규화 노출량을 적용한 상태입니다.</p>
+          </div>
+          <div class="metric">
+            <h3>조합 위험 중심</h3>
+            <strong id="burdenLead">GABA</strong>
+            <p id="burdenLeadCopy" class="metric-copy">주된 억제 축이 전체 안정성을 가장 많이 끌어내립니다.</p>
+          </div>
+          <div class="metric">
+            <h3>해석 요약</h3>
+            <strong id="readingTitle">상대적으로 안정적</strong>
+            <p id="readingText" class="metric-copy">현재 설정에서는 부담이 비교적 낮습니다.</p>
+          </div>
+        </div>
+
+        <div class="explain-grid">
+          <div class="explain">
+            <h3>1. 경로 통합효과</h3>
+            <strong id="effectTotal">0.00</strong>
+            <p>GABA, 멜라토닌, 오렉신, 히스타민 축을 Hill 곡선과 Bliss 결합으로 합친 무차원 효과량입니다.</p>
+          </div>
+          <div class="explain">
+            <h3>2. 독성부담 B</h3>
+            <strong id="burdenTotal">0.00</strong>
+            <p>효과값에 알코올 상호작용과 취약성 가중치를 더한 무차원 부담량입니다.</p>
+          </div>
+          <div class="explain">
+            <h3>3. 독성확률 Ptox</h3>
+            <strong id="toxProbability">0.0%</strong>
+            <p>logistic 변환으로 만든 상대 독성확률입니다. 실제 사망률이나 실제 임상발생률이 아닙니다.</p>
+          </div>
+          <div class="explain">
+            <h3>4. Stability Index</h3>
+            <strong id="stabilityExplain">100 × (1 - Ptox)</strong>
+            <p>그래프와 점수는 이 정의를 기준으로 계산됩니다. 즉 독성확률이 낮을수록 안정성이 높습니다.</p>
+          </div>
+        </div>
+
+        <div class="reading-grid">
+          <div class="card">
+            <h2>읽는 법</h2>
+            <ul class="scale">
+              <li>80-100: 상대적으로 넓은 안전 여유</li>
+              <li>55-79: 주의가 필요한 중간 구간</li>
+              <li>30-54: 위험이 빠르게 증가하는 구간</li>
+              <li>0-29: 매우 불안정한 조합으로 해석</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>주의</h2>
+            <p class="copy">
+              이 시뮬레이터는 실제 처방, 실제 제조, 실제 복용 용량을 뜻하지 않습니다. 기전 비중과 정규화 노출이
+              안정성에 미치는 방향성을 시각화하는 용도입니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footnote">
+      실제 약물 제조법, 실제 복용량, 치명량 계산은 제공하지 않습니다. 이 페이지의 `%`, `RU`, `AU`는 모두 교육용 정규화 단위이며, 논문식 PK/PD 개념 설명을 위한 무차원 축척입니다.
+    </div>
+  </main>
+
+  <div id="modelModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modelModalTitle">
+      <div class="modal-head">
+        <div>
+          <h3 id="modelModalTitle">수학적 모델과 논문 근거</h3>
+          <p class="copy">아래 수식은 실제 약동학·약력학 연구에서 널리 쓰이는 형태를 바탕으로 단순화한 교육용 모델입니다. 이 페이지의 노출량은 실제 mg가 아니라 `C/EC50`형 정규화 축척으로 해석합니다. 각 링크는 해당 수식 계열의 근거 논문 또는 공식 라벨로 연결됩니다.</p>
+        </div>
+        <button id="closeModelModal" class="close" type="button" aria-label="닫기">×</button>
+      </div>
+
+      <div class="equation-list">
+        <article class="equation">
+          <strong>1. 경로별 농도-효과: Hill / sigmoid Emax</strong>
+          <code>E_i(x) = Emax_i * x^gamma_i / (EC50_i^gamma_i + x^gamma_i)</code>
+          <p>각 작용기전의 효과를 포화형 농도-효과 곡선으로 두었습니다. GABA, 멜라토닌, 오렉신, 히스타민 축 모두 이 기본형 위에서 기울기와 EC50만 다르게 두는 방식입니다. 본 시뮬레이터의 입력축은 실제 농도 대신 `정규화 농도 x = C/EC50`에 대응합니다. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3684160/" target="_blank" rel="noopener noreferrer">논문 링크</a></p>
+        </article>
+
+        <article class="equation">
+          <strong>2. 같은 경로 내 성분 합산: Loewe형 dose-addition surrogate</strong>
+          <code>x_GABA = d * (1.35f_barb + 1.00f_benzo + 0.90f_z)
+E_GABA = Emax_GABA * x_GABA^gamma / (EC50^gamma + x_GABA^gamma)</code>
+          <p>같은 경로에서 작동하는 성분은 먼저 하나의 “등가 노출”로 합산한 뒤 한 개의 Hill 곡선에 통과시켰습니다. 이는 같은 경로 내 dose-addition을 가정하는 Loewe/isobologram 계열의 직관을 따른 단순화입니다. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6830115/" target="_blank" rel="noopener noreferrer">논문 링크</a></p>
+        </article>
+
+        <article class="equation">
+          <strong>3. 다른 경로 간 병합: Bliss independence</strong>
+          <code>E_total = 1 - (1 - E_GABA)(1 - E_MEL)(1 - E_ORX)(1 - E_H1)</code>
+          <p>서로 다른 경로의 효과는 독립적인 확률적 기여로 보고 Bliss independence 형태로 합쳤습니다. 이 방식은 경로가 다른 약물 조합의 기대효과를 계산할 때 널리 쓰입니다. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7010330/" target="_blank" rel="noopener noreferrer">논문 링크</a></p>
+        </article>
+
+        <article class="equation">
+          <strong>4. 병용 위험항과 최종 안정성</strong>
+          <code>B = 1.15E_GABA(1 + 0.75f_barb) + 0.22E_MEL + 0.42E_ORX + 0.60E_H1 + 0.95E_A
+    + lambda * E_A * (E_GABA + E_H1 + 0.4E_ORX) + 0.85V
+P_tox = 1 / (1 + exp(-(a + bB)))
+Stability = 100 * (1 - P_tox)</code>
+          <p>최종 위험은 logistic 변환으로 확률형 지표로 맵핑했습니다. 알코올과 다른 CNS depressant의 병용 경고는 실제 라벨에서도 반복적으로 제시되므로, 상호작용항을 별도로 두었습니다. <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2023/215721s000lbl.pdf" target="_blank" rel="noopener noreferrer">졸피뎀 FDA 라벨</a> / <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2014/204569s001lbl.pdf" target="_blank" rel="noopener noreferrer">수보렉산트 FDA 라벨</a></p>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const recipeControls = {
+      gabaLegacyMix: $("gabaLegacyMix"),
+      gabaBenzoMix: $("gabaBenzoMix"),
+      gabaZMix: $("gabaZMix"),
+      melatoninRamelteonMix: $("melatoninRamelteonMix"),
+      melatoninMix: $("melatoninMix"),
+      orexinMix: $("orexinMix"),
+      histamineDoxepinMix: $("histamineDoxepinMix"),
+      histamineAntihistamineMix: $("histamineAntihistamineMix")
+    };
+
+    const simControls = {
+      dose: $("dose"),
+      alcoholEnabled: $("alcoholEnabled"),
+      alcohol: $("alcohol"),
+      vulnerability: $("vulnerability"),
+      interaction: $("interaction")
+    };
+
+    const outputs = {
+      doseValue: $("doseValue"),
+      alcoholValue: $("alcoholValue"),
+      vulnerabilityValue: $("vulnerabilityValue"),
+      interactionValue: $("interactionValue"),
+      dominantMechanism: $("dominantMechanism"),
+      dominantCopy: $("dominantCopy"),
+      recipeStyle: $("recipeStyle"),
+      recipeStyleCopy: $("recipeStyleCopy"),
+      recipeTotal: $("recipeTotal"),
+      recipePotency: $("recipePotency"),
+      alcoholCard: $("alcoholCard"),
+      stabilityScore: $("stabilityScore"),
+      status: $("status"),
+      gabaBar: $("gabaBar"),
+      melatoninBar: $("melatoninBar"),
+      orexinBar: $("orexinBar"),
+      histamineBar: $("histamineBar"),
+      alcoholBar: $("alcoholBar"),
+      interactionBar: $("interactionBar"),
+      gabaBarValue: $("gabaBarValue"),
+      melatoninBarValue: $("melatoninBarValue"),
+      orexinBarValue: $("orexinBarValue"),
+      histamineBarValue: $("histamineBarValue"),
+      alcoholBarValue: $("alcoholBarValue"),
+      interactionBarValue: $("interactionBarValue"),
+      currentDoseLabel: $("currentDoseLabel"),
+      burdenLead: $("burdenLead"),
+      burdenLeadCopy: $("burdenLeadCopy"),
+      readingTitle: $("readingTitle"),
+      readingText: $("readingText"),
+      effectTotal: $("effectTotal"),
+      burdenTotal: $("burdenTotal"),
+      toxProbability: $("toxProbability")
+    };
+
+    const presetButtons = [...document.querySelectorAll(".preset-button")];
+    const canvas = $("curve");
+    const ctx = canvas.getContext("2d");
+    const modelModal = $("modelModal");
+    let activePreset = "modern";
+
+    const presetMap = {
+      legacy: {
+        gabaLegacyMix: 68,
+        gabaBenzoMix: 10,
+        gabaZMix: 0,
+        melatoninRamelteonMix: 0,
+        melatoninMix: 0,
+        orexinMix: 0,
+        histamineDoxepinMix: 12,
+        histamineAntihistamineMix: 10
+      },
+      modern: {
+        gabaLegacyMix: 0,
+        gabaBenzoMix: 38,
+        gabaZMix: 24,
+        melatoninRamelteonMix: 8,
+        melatoninMix: 6,
+        orexinMix: 10,
+        histamineDoxepinMix: 8,
+        histamineAntihistamineMix: 6
+      }
+    };
+
+    function setPreset(name) {
+      activePreset = name;
+      if (presetMap[name]) {
+        Object.entries(presetMap[name]).forEach(([key, value]) => {
+          recipeControls[key].value = value;
+        });
+      }
+      syncPresetButtons();
+      refresh();
+    }
+
+    function syncPresetButtons() {
+      presetButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.preset === activePreset);
+      });
+    }
+
+    function valueToPercent(value) {
+      return Number(value);
+    }
+
+    function valueToRU(value) {
+      return (Number(value) / 10).toFixed(1) + " RU";
+    }
+
+    function valueToAU(value) {
+      return (Number(value) / 10).toFixed(1) + " AU";
+    }
+
+    function updateRecipeLabels() {
+      Object.keys(recipeControls).forEach((key) => {
+        $(key + "Value").textContent = valueToPercent(recipeControls[key].value) + "%";
+      });
+    }
+
+    function getRecipe() {
+      return {
+        gabaLegacy: Number(recipeControls.gabaLegacyMix.value) / 100,
+        gabaBenzo: Number(recipeControls.gabaBenzoMix.value) / 100,
+        gabaZ: Number(recipeControls.gabaZMix.value) / 100,
+        melatoninRamelteon: Number(recipeControls.melatoninRamelteonMix.value) / 100,
+        melatonin: Number(recipeControls.melatoninMix.value) / 100,
+        orexin: Number(recipeControls.orexinMix.value) / 100,
+        histamineDoxepin: Number(recipeControls.histamineDoxepinMix.value) / 100,
+        histamineAntihistamine: Number(recipeControls.histamineAntihistamineMix.value) / 100
+      };
+    }
+
+    function normalizeRecipe(recipe) {
+      const total = Object.values(recipe).reduce((sum, value) => sum + value, 0);
+      if (total <= 0) {
+        return {
+          normalized: { ...recipe },
+          total: 0
+        };
+      }
+
+      const normalized = {};
+      Object.entries(recipe).forEach(([key, value]) => {
+        normalized[key] = value / total;
+      });
+
+      return { normalized, total };
+    }
+
+    function calculateRecipePotency(recipe) {
+      const { normalized } = normalizeRecipe(recipe);
+      const xGaba = 0.65 * (1.35 * normalized.gabaLegacy + 1.0 * normalized.gabaBenzo + 0.9 * normalized.gabaZ);
+      const xMel = 0.65 * (1.1 * normalized.melatoninRamelteon + 0.8 * normalized.melatonin);
+      const xOrx = 0.65 * normalized.orexin;
+      const xH1 = 0.65 * (0.95 * normalized.histamineDoxepin + 1.05 * normalized.histamineAntihistamine);
+      return hill(xGaba, 0.45, 2.1) + hill(xMel, 0.62, 1.2) + hill(xOrx, 0.58, 1.4) + hill(xH1, 0.50, 1.5);
+    }
+
+    function hill(x, ec50, gamma, emax = 1) {
+      return emax * (Math.pow(x, gamma) / (Math.pow(ec50, gamma) + Math.pow(x, gamma) || 1));
+    }
+
+    function logistic(z) {
+      return 1 / (1 + Math.exp(-z));
+    }
+
+    function buildRecipeProfile(recipe, doseScale = 1) {
+      const dose = (Number(simControls.dose.value) / 100) * doseScale;
+      const vulnerability = Number(simControls.vulnerability.value) / 100;
+      const alcohol = simControls.alcoholEnabled.checked ? Number(simControls.alcohol.value) / 100 * doseScale : 0;
+      const lambda = 0.26 + (Number(simControls.interaction.value) / 100) * 1.14;
+      const { normalized, total } = normalizeRecipe(recipe);
+      const xGaba = dose * (1.35 * normalized.gabaLegacy + 1.0 * normalized.gabaBenzo + 0.9 * normalized.gabaZ);
+      const xMel = dose * (1.1 * normalized.melatoninRamelteon + 0.8 * normalized.melatonin);
+      const xOrx = dose * normalized.orexin;
+      const xH1 = dose * (0.95 * normalized.histamineDoxepin + 1.05 * normalized.histamineAntihistamine);
+
+      const gabaEffect = hill(xGaba, 0.45, 2.1);
+      const melatoninEffect = hill(xMel, 0.62, 1.2);
+      const orexinEffect = hill(xOrx, 0.58, 1.4);
+      const histamineEffect = hill(xH1, 0.50, 1.5);
+      const alcoholEffect = simControls.alcoholEnabled.checked ? hill(alcohol, 0.58, 1.3) : 0;
+
+      const blissEffect = 1 - (1 - gabaEffect) * (1 - melatoninEffect) * (1 - orexinEffect) * (1 - histamineEffect);
+      const gabaBurden = 1.15 * gabaEffect * (1 + 0.75 * normalized.gabaLegacy);
+      const melatoninBurden = 0.22 * melatoninEffect;
+      const orexinBurden = 0.42 * orexinEffect;
+      const histamineBurden = 0.60 * histamineEffect;
+      const alcoholBurden = 0.95 * alcoholEffect;
+      const interactionBurden = lambda * alcoholEffect * (gabaEffect + histamineEffect + 0.4 * orexinEffect);
+      const vulnerabilityBurden = 0.85 * vulnerability;
+      const totalBurden = gabaBurden + melatoninBurden + orexinBurden + histamineBurden + alcoholBurden + interactionBurden + vulnerabilityBurden;
+      const toxicityProbability = logistic(-3.0 + 4.2 * totalBurden);
+      const stability = Math.max(0, Math.min(100, 100 * (1 - toxicityProbability)));
+
+      return {
+        dose,
+        alcohol,
+        recipeTotal: total,
+        normalizedRecipe: normalized,
+        blissEffect,
+        toxicityProbability,
+        gabaBurden,
+        melatoninBurden,
+        orexinBurden,
+        histamineBurden,
+        alcoholBurden,
+        interactionBurden,
+        vulnerabilityBurden,
+        totalBurden,
+        stability
+      };
+    }
+
+    function classifyRecipe(recipe) {
+      const { normalized, total } = normalizeRecipe(recipe);
+      const sums = {
+        gaba: normalized.gabaLegacy + normalized.gabaBenzo + normalized.gabaZ,
+        melatonin: normalized.melatoninRamelteon + normalized.melatonin,
+        orexin: normalized.orexin,
+        histamine: normalized.histamineDoxepin + normalized.histamineAntihistamine
+      };
+
+      const entries = Object.entries(sums).sort((a, b) => b[1] - a[1]);
+      const dominant = entries[0][0];
+      const legacyHeavy = normalized.gabaLegacy > 0.45;
+      const modernHeavy = normalized.gabaLegacy < 0.15 && (normalized.gabaBenzo + normalized.gabaZ + normalized.orexin + normalized.melatoninRamelteon) > 0.45;
+
+      return {
+        sums,
+        dominant,
+        total,
+        style: legacyHeavy ? "과거형 중심" : modernHeavy ? "현대형 혼합" : "혼합형 설계"
+      };
+    }
+
+    function getStatus(score) {
+      if (score >= 80) {
+        return {
+          label: "상대적으로 안정적",
+          color: "var(--good)",
+          bg: "rgba(47, 122, 88, 0.14)",
+          text: "현재 복용량에서는 상대 부담이 아직 낮습니다. 다만 GABA 축이나 알코올이 커지면 곡선이 빨리 꺾일 수 있습니다."
+        };
+      }
+      if (score >= 55) {
+        return {
+          label: "주의 필요",
+          color: "var(--warn)",
+          bg: "rgba(194, 136, 34, 0.16)",
+          text: "안전 여유가 줄어드는 구간입니다. GABA와 히스타민 차단, 알코올 병용이 함께 있으면 부담이 더 빠르게 올라갑니다."
+        };
+      }
+      if (score >= 30) {
+        return {
+          label: "고위험 구간",
+          color: "var(--bad)",
+          bg: "rgba(175, 61, 49, 0.16)",
+          text: "복용량 증가에 따라 부담이 가파르게 커지는 상태입니다. 과거형 GABA 비중이 높을수록 더 민감하게 내려갑니다."
+        };
+      }
+      return {
+        label: "매우 불안정",
+        color: "var(--bad)",
+        bg: "rgba(175, 61, 49, 0.22)",
+        text: "이 모델에서는 총 부담이 매우 높은 조합입니다. 다중 기전 병용과 알코올, 개인 취약성이 겹친 상태로 해석됩니다."
+      };
+    }
+
+    function setBar(node, valueNode, value, color) {
+      const pct = Math.max(0, Math.min(100, value));
+      node.style.width = pct + "%";
+      node.style.background = color;
+      valueNode.textContent = pct.toFixed(0) + "%";
+    }
+
+    function drawCurve(currentRecipe) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = "rgba(33, 29, 24, 0.12)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = 16 + ((h - 32) / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(36, y);
+        ctx.lineTo(w - 14, y);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "rgba(111, 102, 93, 0.95)";
+      ctx.font = "12px Segoe UI";
+      ctx.fillText("안정성", 8, 20);
+      ctx.fillText("복용량 증가", w - 80, h - 10);
+
+      const legacyPoints = [];
+      const modernPoints = [];
+      const currentPoints = [];
+      for (let i = 0; i <= 40; i++) {
+        const scale = 0.15 + (i / 40) * 1.85;
+        legacyPoints.push(buildRecipeProfile(getPresetRecipe("legacy"), scale).stability);
+        modernPoints.push(buildRecipeProfile(getPresetRecipe("modern"), scale).stability);
+        currentPoints.push(buildRecipeProfile(currentRecipe, scale).stability);
+      }
+
+      function drawSeries(points, color, dashed = false, width = 3) {
+        ctx.lineWidth = width;
+        ctx.strokeStyle = color;
+        ctx.setLineDash(dashed ? [7, 5] : []);
+        ctx.beginPath();
+        points.forEach((score, index) => {
+          const x = 36 + ((w - 50) * index) / (points.length - 1);
+          const y = 16 + ((100 - score) / 100) * (h - 32);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      drawSeries(legacyPoints, "#a94931", false, 3.2);
+      drawSeries(modernPoints, "#385d7d", false, 3.2);
+      drawSeries(currentPoints, "#7b6a52", true, 2.4);
+
+      ctx.strokeStyle = "rgba(56, 93, 125, 0.34)";
+      ctx.setLineDash([5, 5]);
+      [80, 55, 30].forEach((mark) => {
+        const y = 16 + ((100 - mark) / 100) * (h - 32);
+        ctx.beginPath();
+        ctx.moveTo(36, y);
+        ctx.lineTo(w - 14, y);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+    }
+
+    function getPresetRecipe(name) {
+      const preset = presetMap[name];
+      return {
+        gabaLegacy: preset.gabaLegacyMix / 100,
+        gabaBenzo: preset.gabaBenzoMix / 100,
+        gabaZ: preset.gabaZMix / 100,
+        melatoninRamelteon: preset.melatoninRamelteonMix / 100,
+        melatonin: preset.melatoninMix / 100,
+        orexin: preset.orexinMix / 100,
+        histamineDoxepin: preset.histamineDoxepinMix / 100,
+        histamineAntihistamine: preset.histamineAntihistamineMix / 100
+      };
+    }
+
+    function refresh() {
+      updateRecipeLabels();
+
+      outputs.doseValue.textContent = valueToRU(simControls.dose.value);
+      outputs.currentDoseLabel.textContent = valueToRU(simControls.dose.value);
+      outputs.vulnerabilityValue.textContent = simControls.vulnerability.value;
+      outputs.interactionValue.textContent = simControls.interaction.value;
+
+      const alcoholOn = simControls.alcoholEnabled.checked;
+      simControls.alcohol.disabled = !alcoholOn;
+      if (!alcoholOn) simControls.alcohol.value = 0;
+      outputs.alcoholCard.style.opacity = alcoholOn ? "1" : "0.45";
+      outputs.alcoholValue.textContent = valueToAU(simControls.alcohol.value);
+
+      const recipe = getRecipe();
+      const profile = buildRecipeProfile(recipe, 1);
+      const recipeClass = classifyRecipe(recipe);
+      const status = getStatus(profile.stability);
+      const totalMix = Object.values(recipe).reduce((sum, value) => sum + value, 0);
+
+      outputs.recipeTotal.textContent = Math.round(totalMix * 100) + "%";
+      outputs.recipePotency.textContent = calculateRecipePotency(recipe).toFixed(2);
+      outputs.recipeStyle.textContent = recipeClass.style;
+      outputs.recipeStyleCopy.textContent =
+        recipeClass.style === "과거형 중심" ? "바르비투르산계 축이 커서 복용량 증가에 더 민감한 타입입니다." :
+        recipeClass.style === "현대형 혼합" ? "포화형 기전이 섞여 있지만 병용이 많아지면 다시 불안정해질 수 있습니다." :
+        "여러 축이 나뉘어 있는 사용자 조합입니다.";
+
+      const dominantMap = {
+        gaba: ["GABA 강화", "직접 억제 축이 가장 큽니다."],
+        melatonin: ["멜라토닌 조절", "리듬 조절 기전이 조합의 중심입니다."],
+        orexin: ["오렉신 차단", "각성 억제 기전이 가장 큽니다."],
+        histamine: ["히스타민 차단", "진정성 항히스타민 축이 중심입니다."]
+      };
+      outputs.dominantMechanism.textContent = dominantMap[recipeClass.dominant][0];
+      outputs.dominantCopy.textContent =
+        dominantMap[recipeClass.dominant][1] + " 정규화 기준 비중은 " + Math.round(recipeClass.sums[recipeClass.dominant] * 100) + "%입니다.";
+
+      outputs.stabilityScore.textContent = profile.stability.toFixed(1);
+      outputs.status.textContent = status.label;
+      outputs.status.style.color = status.color;
+      outputs.status.style.background = status.bg;
+      outputs.readingTitle.textContent = status.label;
+      outputs.readingText.textContent = status.text;
+      outputs.effectTotal.textContent = profile.blissEffect.toFixed(2);
+      outputs.burdenTotal.textContent = profile.totalBurden.toFixed(2);
+      outputs.toxProbability.textContent = (profile.toxicityProbability * 100).toFixed(1) + "%";
+
+      const burdens = {
+        GABA: profile.gabaBurden,
+        멜라토닌: profile.melatoninBurden,
+        오렉신: profile.orexinBurden,
+        히스타민: profile.histamineBurden,
+        알코올: profile.alcoholBurden,
+        상호작용: profile.interactionBurden
+      };
+      const lead = Object.entries(burdens).sort((a, b) => b[1] - a[1])[0][0];
+      outputs.burdenLead.textContent = lead;
+      outputs.burdenLeadCopy.textContent = lead + " 부담이 현재 설정에서 전체 안정성 하락을 가장 크게 이끕니다.";
+
+      const total = profile.totalBurden || 1;
+      setBar(outputs.gabaBar, outputs.gabaBarValue, (profile.gabaBurden / total) * 100, "linear-gradient(90deg, #d06c4d, #a94931)");
+      setBar(outputs.melatoninBar, outputs.melatoninBarValue, (profile.melatoninBurden / total) * 100, "linear-gradient(90deg, #69a57e, #2f7a58)");
+      setBar(outputs.orexinBar, outputs.orexinBarValue, (profile.orexinBurden / total) * 100, "linear-gradient(90deg, #7c88cc, #4c5da8)");
+      setBar(outputs.histamineBar, outputs.histamineBarValue, (profile.histamineBurden / total) * 100, "linear-gradient(90deg, #93a85c, #617c2a)");
+      setBar(outputs.alcoholBar, outputs.alcoholBarValue, (profile.alcoholBurden / total) * 100, "linear-gradient(90deg, #efb15e, #c28822)");
+      setBar(outputs.interactionBar, outputs.interactionBarValue, (profile.interactionBurden / total) * 100, "linear-gradient(90deg, #dd8d79, #8b3027)");
+
+      drawCurve(recipe);
+    }
+
+    $("openModelModal").addEventListener("click", () => {
+      modelModal.classList.add("open");
+      modelModal.setAttribute("aria-hidden", "false");
+    });
+
+    $("closeModelModal").addEventListener("click", () => {
+      modelModal.classList.remove("open");
+      modelModal.setAttribute("aria-hidden", "true");
+    });
+
+    modelModal.addEventListener("click", (event) => {
+      if (event.target === modelModal) {
+        modelModal.classList.remove("open");
+        modelModal.setAttribute("aria-hidden", "true");
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && modelModal.classList.contains("open")) {
+        modelModal.classList.remove("open");
+        modelModal.setAttribute("aria-hidden", "true");
+      }
+    });
+
+    Object.values(recipeControls).forEach((input) => {
+      input.addEventListener("input", () => {
+        activePreset = "custom";
+        syncPresetButtons();
+        refresh();
+      });
+      input.addEventListener("change", refresh);
+    });
+
+    Object.values(simControls).forEach((input) => {
+      input.addEventListener("input", refresh);
+      input.addEventListener("change", refresh);
+    });
+
+    presetButtons.forEach((button) => {
+      button.addEventListener("click", () => setPreset(button.dataset.preset));
+    });
+
+    window.addEventListener("resize", () => drawCurve(getRecipe()));
+    syncPresetButtons();
+    refresh();
+  </script>
+</body>
+</html>
